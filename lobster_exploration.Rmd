@@ -1,0 +1,120 @@
+---
+title: "lobster_exploration"
+output: html_document
+date: '2022-08-15'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+
+library(tidyverse)
+library(here)
+library(janitor)
+
+```
+
+
+```{r}
+
+lobster_abundance_freqency <- read_csv(here::here("data", "Lobster_Abundance_All_Years_20210412.csv"), na = c( "-99999", "")) %>%
+  clean_names()
+
+lobster_abundance_case <- read_csv(here::here("data", "Lobster_Abundance_All_Years_20210412.csv"), na = c( "-99999", "")) %>%
+  clean_names() %>%
+  uncount(count)
+
+# dplyr::uncount() - instead of having a column that shows how many times an observation occurred, uncount separates the same observations in different rows
+
+lobster_abundance_case$size_mm <- as.numeric(lobster_abundance_case$size_mm)
+
+# Count and Mean by Site and Year
+
+lobster_summary <- lobster_abundance_case %>%
+  group_by(year, site) %>%
+  summarise(n = n(),
+            mean_carapace_length = mean(size_mm, na.rm = TRUE))
+
+# ggplot of total lobsters observed over time
+
+ggplot(data = lobster_summary, aes(x = year, y = n)) +
+  geom_line(aes(color = site))
+
+```
+
+
+## Proportion of legal lobsters at each site for 2020
+
+```{r}
+lobster_2020 <- lobster_abundance_case %>%
+  filter(year == 2020)
+
+
+lobster_counts <- lobster_2020 %>% 
+  mutate(legal = ifelse(size_mm > 79.76, "yes", "no")) %>% 
+  group_by(site, legal) %>% 
+  summarise(count = n())
+
+ggplot(data = lobster_counts, aes(x = site, y = count)) +
+  geom_col(position = "fill", aes(color = legal, fill = legal))
+
+# IV and Naples had highest % of legal catches - this is because these are not official dive sites. Another hypothesis is that these locations are somewhat remote for divers living downtown
+
+```
+
+## Task 3
+
+```{r}
+# lobster_abundance_case
+
+ex_a <- lobster_abundance_case %>% 
+  filter(site %in% c("IVEE", "CARP", "NAPL"))
+
+ex_b <- lobster_abundance_case %>% 
+  filter(month == 8, na.rm = TRUE)
+
+ex_c <- lobster_abundance_case %>% 
+  filter(site == "AQUE" | size_mm > 70)
+
+ex_d <- lobster_abundance_case %>% 
+  filter(site != "NAPL")
+
+# OR
+
+ex_d <- lobster_abundance_case %>% 
+  filter(!site %in% "NAPL")
+```
+
+## Group_by and Summarise
+
+```{r}
+# lobster_abundance_case
+
+ex_e <- lobster_abundance_case %>% 
+  group_by(site) %>% 
+  summarise(mean_carapace_length = mean(size_mm, na.rm = TRUE),
+            sd_carapace_length = sd(size_mm, na.rm = TRUE))
+
+ex_f <- lobster_abundance_case %>% 
+  group_by(site, month) %>% 
+  summarise((max_carapace_length = max(size_mm, na.rm = TRUE)))
+
+```
+## Mutate Practice
+
+```{r}
+
+ex_g <- lobster_abundance_case %>% 
+  mutate(carapace_length_cm = size_mm / 10)
+
+ex_h <- lobster_abundance_case %>% 
+  mutate(site = tolower(site))
+
+ex_i <- lobster_abundance_case %>% 
+  mutate(area = as.character(area))
+
+```
+
+
